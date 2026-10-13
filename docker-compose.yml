@@ -1,0 +1,12 @@
+services:
+  db:
+    image: "postgres:18"
+    environment:
+      POSTGRES_DB: pantry
+      POSTGRES_USER: example
+      POSTGRES_PASSWORD: example
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pantryData:/var/lib/postgresql
+volumes:
+  pantryData:
