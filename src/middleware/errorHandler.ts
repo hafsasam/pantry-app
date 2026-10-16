@@ -26,6 +26,8 @@ export function errorHandler(
     res.status(404).json({ error: err.message });
   } else if ("status" in err && err.status === 400) {
     res.status(400).json({ error: "Malformed JSON body" });
+  } else if ("code" in err && err.code == "23505") {
+    res.status(409).json({ error: "Item already created" });
   } else {
     req.log.error(err);
     res.status(500).json({ error: "There was an issue handling your request" });

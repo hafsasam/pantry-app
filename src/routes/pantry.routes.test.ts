@@ -1,8 +1,8 @@
 import request from "supertest";
 import { app } from "../app.js";
-import { describe, beforeEach, test, expect } from "vitest";
-import { resetData } from "../data/pantryData.js";
+import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import type { PantryItem } from "../schema/pantry.schema.js";
+import { pool } from "../db.js";
 
 const mockItem: PantryItem = {
   id: 1,
@@ -12,9 +12,15 @@ const mockItem: PantryItem = {
   needs_restocking: false,
 };
 
+const resetData = async () => {
+  await pool.query(
+    "TRUNCATE pantry_items, ingredients, recipes, recipe_ingredients, recipe_steps RESTART IDENTITY CASCADE",
+  );
+};
+
 describe("pantry items endpoints", () => {
-  beforeEach(() => {
-    resetData();
+  beforeEach(async () => {
+    await resetData();
   });
 
   test("gets all pantry items and finds an emty array", async () => {
@@ -110,7 +116,9 @@ describe("pantry items endpoints", () => {
 
   test("paginates items longers than 10", async () => {
     for (let i = 1; i <= 15; i++) {
-      await request(app).post("/pantry").send(mockItem);
+      await request(app)
+        .post("/pantry")
+        .send({ ...mockItem, name: `item ${i}` });
     }
 
     const response = await request(app).get("/pantry");
@@ -134,7 +142,11 @@ describe("pantry items endpoints", () => {
     for (let i = 1; i <= 15; i++) {
       await request(app)
         .post("/pantry")
-        .send({ ...mockItem, needs_restocking: i % 3 === 0 ? true : false });
+        .send({
+          ...mockItem,
+          name: `item ${i}`,
+          needs_restocking: i % 3 === 0 ? true : false,
+        });
     }
 
     const response = await request(app).get("/pantry?needs_restocking=true");
@@ -166,7 +178,24 @@ describe("pantry items endpoints", () => {
       .post("/pantry")
       .set("Content-Type", "application/json")
       .send("{quantity:-2}");
-    console.log(response);
     expect(response.status).toEqual(400);
   });
+
+  test("handles duplicate pantry items names in POST", async () => {
+    await request(app).post("/pantry").send(mockItem);
+    const response = await request(app).post("/pantry").send(mockItem);
+
+    expect(response.status).toEqual(409);
+  });
+
+  test("no pantry item name in PATCH", async () => {
+    await request(app).post("/pantry").send(mockItem);
+    const response = await request(app)
+      .patch("/pantry/1")
+      .send({ name: "oats" });
+
+    expect(response.status).toEqual(400);
+  });
+
+  afterAll(() => pool.end());
 });

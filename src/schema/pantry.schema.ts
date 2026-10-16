@@ -18,7 +18,8 @@ export const PantryItemSchema = CreatePantrySchema.extend({
   id: z.number().openapi({ example: 13 }),
 }).openapi("PantryItem");
 
-export const PartialPantrySchema = PantryInputSchema.exactPartial()
+export const PartialPantrySchema = PantryInputSchema.omit({ name: true })
+  .exactPartial()
   .strict()
   .refine((val) => Object.keys(val).length > 0, {
     error: "No empty objects allowed! Provide at least one field to update",
