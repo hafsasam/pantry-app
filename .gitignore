@@ -6,3 +6,7 @@ dist/
 .DS_Store
 coverage/
 dist/
+.agents
+.claude
+skills-lock.json
+/src/generated/prisma

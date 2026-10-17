@@ -54,3 +54,9 @@ WITH missing_counts AS (
 SELECT name
 FROM missing_counts
 WHERE missing = 0;
+
+-- get steps for the baked oatmeal recipe in order
+SELECT position, text from recipe_steps rs
+JOIN recipes r on r.id = rs.recipe_id
+WHERE r.name = 'Baked Berry & Pecan Oatmeal'
+ORDER BY position ASC;

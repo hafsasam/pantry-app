@@ -2,7 +2,7 @@ import request from "supertest";
 import { app } from "../app.js";
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import type { PantryItem } from "../schema/pantry.schema.js";
-import { pool } from "../db.js";
+import { prisma } from "../prisma.js";
 
 const mockItem: PantryItem = {
   id: 1,
@@ -13,9 +13,7 @@ const mockItem: PantryItem = {
 };
 
 const resetData = async () => {
-  await pool.query(
-    "TRUNCATE pantry_items, ingredients, recipes, recipe_ingredients, recipe_steps RESTART IDENTITY CASCADE",
-  );
+  await prisma.$executeRaw`TRUNCATE pantry_items, ingredients, recipes, recipe_ingredients, recipe_steps RESTART IDENTITY CASCADE`;
 };
 
 describe("pantry items endpoints", () => {
@@ -197,5 +195,5 @@ describe("pantry items endpoints", () => {
     expect(response.status).toEqual(400);
   });
 
-  afterAll(() => pool.end());
+  afterAll(() => prisma.$disconnect());
 });

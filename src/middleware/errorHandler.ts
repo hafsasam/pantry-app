@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { NotFoundError, ValidationError } from "../errors/errors.js";
 import { ZodError } from "zod";
+import { Prisma } from "../generated/prisma/client.js";
 
 export function errorHandler(
   err: Error,
@@ -26,8 +27,21 @@ export function errorHandler(
     res.status(404).json({ error: err.message });
   } else if ("status" in err && err.status === 400) {
     res.status(400).json({ error: "Malformed JSON body" });
-  } else if ("code" in err && err.code == "23505") {
-    res.status(409).json({ error: "Item already created" });
+  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === "P2002" || err.code === "P2014") {
+      req.log.warn(err.message);
+      res
+        .status(409)
+        .json({ error: "This ingredient is already in the pantry" });
+    } else if (err.code === "P2025") {
+      req.log.warn(err.message);
+      res.status(404).json({ error: "Pantry item not found" });
+    } else {
+      req.log.error(err);
+      res
+        .status(500)
+        .json({ error: "There was an issue handling your request" });
+    }
   } else {
     req.log.error(err);
     res.status(500).json({ error: "There was an issue handling your request" });
