@@ -56,7 +56,14 @@ FROM missing_counts
 WHERE missing = 0;
 
 -- get steps for the baked oatmeal recipe in order
-SELECT position, text from recipe_steps rs
+SELECT position, text FROM recipe_steps rs
 JOIN recipes r on r.id = rs.recipe_id
 WHERE r.name = 'Baked Berry & Pecan Oatmeal'
 ORDER BY position ASC;
+
+--  "Which ingredients are used by the most recipes?" Show the ingredient name and the number of recipes, most-used first
+SELECT i.name, count(*) as ri_count
+FROM recipe_ingredients ri
+JOIN ingredients i on ri.ingredient_id = i.id
+GROUP BY i.id
+ORDER BY ri_count DESC, i.name ASC;
