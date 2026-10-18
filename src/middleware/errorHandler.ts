@@ -1,5 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { NotFoundError, ValidationError } from "../errors/errors.js";
+import {
+  LowStockError,
+  NotFoundError,
+  ValidationError,
+} from "../errors/errors.js";
 import { ZodError } from "zod";
 import { Prisma } from "../generated/prisma/client.js";
 
@@ -25,6 +29,9 @@ export function errorHandler(
   } else if (err instanceof NotFoundError) {
     req.log.warn(err.message);
     res.status(404).json({ error: err.message });
+  } else if (err instanceof LowStockError) {
+    req.log.warn(err.message);
+    res.status(409).json({ error: err.message });
   } else if ("status" in err && err.status === 400) {
     res.status(400).json({ error: "Malformed JSON body" });
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {

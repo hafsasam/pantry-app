@@ -1,22 +1,15 @@
 import express, { type Request, type Response } from "express";
+import { PantryQuerySchema } from "../schema/pantry.schema.js";
 import {
+  createItem,
+  deleteItem,
   getAllItems,
   getItemById,
-  createItem,
   updateItem,
-  deleteItem,
 } from "../services/services.js";
-import { ValidationError } from "../errors/errors.js";
-import { PantryQuerySchema } from "../schema/pantry.schema.js";
+import { parseId } from "./utils.js";
 
 export const router = express.Router({ caseSensitive: true, strict: true });
-
-const parseId = (id: unknown): number => {
-  const numberId = Number(id);
-  if (typeof id == "string" && Number.isInteger(numberId) && numberId > 0)
-    return numberId;
-  throw new ValidationError("Invalid id");
-};
 
 router.get("/", async (req: Request, res: Response) => {
   const { page, needs_restocking } = PantryQuerySchema.parse(req.query);

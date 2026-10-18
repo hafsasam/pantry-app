@@ -3,6 +3,7 @@ import { app } from "../app.js";
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import type { PantryItem } from "../schema/pantry.schema.js";
 import { prisma } from "../prisma.js";
+import { resetData } from "./utils.js";
 
 const mockItem: PantryItem = {
   id: 1,
@@ -10,10 +11,6 @@ const mockItem: PantryItem = {
   quantity: 2,
   unit: "l",
   needs_restocking: false,
-};
-
-const resetData = async () => {
-  await prisma.$executeRaw`TRUNCATE pantry_items, ingredients, recipes, recipe_ingredients, recipe_steps RESTART IDENTITY CASCADE`;
 };
 
 describe("pantry items endpoints", () => {

@@ -6,6 +6,7 @@ import {
   remove,
   pageSize,
 } from "../data/pantryData.js";
+import { cookRecipe } from "../data/recipesData.js";
 import {
   CreatePantrySchema,
   PartialPantrySchema,
@@ -45,4 +46,8 @@ export const updateItem = async (
 
 export const deleteItem = async (id: number): Promise<void> => {
   return remove(id);
+};
+
+export const cookRecipeId = async (id: number): Promise<PantryItem[]> => {
+  return cookRecipe(id);
 };

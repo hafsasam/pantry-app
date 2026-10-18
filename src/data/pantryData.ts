@@ -4,10 +4,11 @@ import { prisma } from "../prisma.js";
 import type { Prisma } from "../generated/prisma/client.js";
 export const pageSize: number = 10;
 
-type PantryItemWithIngredient = Prisma.PantryItemGetPayload<{
+export type PantryItemWithIngredient = Prisma.PantryItemGetPayload<{
   include: { ingredient: true };
 }>;
-const toPantryItem = (row: PantryItemWithIngredient): PantryItem => ({
+
+export const toPantryItem = (row: PantryItemWithIngredient): PantryItem => ({
   id: row.id,
   name: row.ingredient.name,
   unit: row.unit,

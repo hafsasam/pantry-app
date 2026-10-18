@@ -10,3 +10,9 @@ export class ValidationError extends Error {
     this.name = "ValidationError";
   }
 }
+export class LowStockError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LowStockError";
+  }
+}
