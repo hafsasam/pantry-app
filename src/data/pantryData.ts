@@ -18,10 +18,14 @@ export const toPantryItem = (row: PantryItemWithIngredient): PantryItem => ({
 
 export const findAll = async (
   page: number,
+  userId: number,
   needs_restocking?: boolean,
 ): Promise<{ items: PantryItem[]; total: number }> => {
   const start = pageSize * (page - 1);
-  const where = needs_restocking === undefined ? {} : { needs_restocking };
+  const where = {
+    user_id: userId,
+    ...(needs_restocking === undefined ? {} : { needs_restocking }),
+  };
   const [filteredPantryRows, totalPantryRows] = await Promise.all([
     prisma.pantryItem.findMany({
       include: { ingredient: true },
@@ -43,6 +47,7 @@ export const findAll = async (
 
 export const create = async (
   item: Omit<PantryItem, "id">,
+  userId: number,
 ): Promise<PantryItem> => {
   const pantryItem = await prisma.pantryItem.create({
     data: {
@@ -57,6 +62,11 @@ export const create = async (
       quantity: item.quantity,
       unit: item.unit,
       needs_restocking: item.needs_restocking,
+      user: {
+        connect: {
+          id: userId,
+        },
+      },
     },
     include: { ingredient: true },
   });
@@ -64,9 +74,12 @@ export const create = async (
   return toPantryItem(pantryItem);
 };
 
-export const findById = async (id: number): Promise<PantryItem> => {
+export const findById = async (
+  id: number,
+  userId: number,
+): Promise<PantryItem> => {
   const row = await prisma.pantryItem.findUnique({
-    where: { id },
+    where: { id, user: { id: userId } },
     include: { ingredient: true },
   });
   if (row === null) {
@@ -79,9 +92,10 @@ export const findById = async (id: number): Promise<PantryItem> => {
 export const update = async (
   id: number,
   updatedItem: PartialPantryItem,
+  userId: number,
 ): Promise<PantryItem> => {
   const row = await prisma.pantryItem.update({
-    where: { id },
+    where: { id, user: { id: userId } },
     include: { ingredient: true },
     data: {
       ...updatedItem,
@@ -91,8 +105,8 @@ export const update = async (
   return toPantryItem(row);
 };
 
-export const remove = async (id: number): Promise<void> => {
+export const remove = async (id: number, userId: number): Promise<void> => {
   await prisma.pantryItem.delete({
-    where: { id },
+    where: { id, user: { id: userId } },
   });
 };

@@ -1,10 +1,20 @@
 import { prisma } from "../src/prisma";
 
+const user = { connect: { email: "hafsa@me.com" } };
+
 await prisma.pantryItem.deleteMany();
 await prisma.recipeIngredient.deleteMany();
 await prisma.recipeStep.deleteMany();
 await prisma.recipe.deleteMany();
 await prisma.ingredient.deleteMany();
+await prisma.user.deleteMany();
+
+await prisma.user.create({
+  data: {
+    email: "hafsa@me.com",
+    password_hash: "correct horse battery",
+  },
+});
 
 await prisma.recipe.create({
   data: {
@@ -399,6 +409,7 @@ await prisma.pantryItem.create({
         create: { name: "rolled oats" },
       },
     },
+    user,
   },
 });
 
@@ -413,6 +424,7 @@ await prisma.pantryItem.create({
         create: { name: "unsweetened soy milk" },
       },
     },
+    user,
   },
 });
 
@@ -427,6 +439,7 @@ await prisma.pantryItem.create({
         create: { name: "unsweetened soy yogurt" },
       },
     },
+    user,
   },
 });
 
@@ -441,6 +454,7 @@ await prisma.pantryItem.create({
         create: { name: "natural peanut butter" },
       },
     },
+    user,
   },
 });
 
@@ -455,6 +469,7 @@ await prisma.pantryItem.create({
         create: { name: "dutch-processed cocoa powder" },
       },
     },
+    user,
   },
 });
 
@@ -469,6 +484,7 @@ await prisma.pantryItem.create({
         create: { name: "dairy-free dark chocolate" },
       },
     },
+    user,
   },
 });
 
@@ -483,6 +499,7 @@ await prisma.pantryItem.create({
         create: { name: "maple syrup" },
       },
     },
+    user,
   },
 });
 
@@ -497,6 +514,7 @@ await prisma.pantryItem.create({
         create: { name: "whole chia seeds" },
       },
     },
+    user,
   },
 });
 
@@ -511,6 +529,7 @@ await prisma.pantryItem.create({
         create: { name: "salt" },
       },
     },
+    user,
   },
 });
 
@@ -525,6 +544,7 @@ await prisma.pantryItem.create({
         create: { name: "ground cinnamon" },
       },
     },
+    user,
   },
 });
 
@@ -539,6 +559,7 @@ await prisma.pantryItem.create({
         create: { name: "frozen mixed berries" },
       },
     },
+    user,
   },
 });
 

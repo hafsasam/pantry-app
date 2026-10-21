@@ -10,6 +10,7 @@ export const recipesRouter = express.Router({
 recipesRouter.post("/:id/cook", async (req: Request, res: Response) => {
   const { id } = req.params;
   const parsedId: number = parseId(id);
-  const item = await cookRecipeId(parsedId);
+  const userId = req.session.userId!;
+  const item = await cookRecipeId(parsedId, userId);
   res.json(item);
 });

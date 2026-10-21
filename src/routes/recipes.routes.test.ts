@@ -1,37 +1,6 @@
-import request from "supertest";
-import { app } from "../app.js";
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
-import { resetData } from "./utils.js";
-
-const stockPantry = async (oatsG: number, milkMl: number) => {
-  await prisma.pantryItem.create({
-    data: {
-      ingredient: {
-        connectOrCreate: {
-          where: { name: "rolled oats" },
-          create: { name: "rolled oats" },
-        },
-      },
-      quantity: oatsG,
-      unit: "g",
-      needs_restocking: false,
-    },
-  });
-  await prisma.pantryItem.create({
-    data: {
-      ingredient: {
-        connectOrCreate: {
-          where: { name: "milk" },
-          create: { name: "milk" },
-        },
-      },
-      quantity: milkMl,
-      unit: "ml",
-      needs_restocking: false,
-    },
-  });
-};
+import { loginAs, resetData } from "./utils.js";
 
 const createRecipe = async () => {
   return await prisma.recipe.create({
@@ -69,15 +38,22 @@ const createRecipe = async () => {
 
 describe("recipe endpoints", () => {
   let recipeId: number;
+  let agent: Awaited<ReturnType<typeof loginAs>>; // the type of what loginAs returns
 
   beforeEach(async () => {
     await resetData();
-    await stockPantry(600, 500);
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent
+      .post("/pantry")
+      .send({ name: "milk", quantity: 500, unit: "ml" });
     recipeId = (await createRecipe()).id;
   });
 
   test("successfully cook a recipe", async () => {
-    const response = await request(app).post(`/recipes/${recipeId}/cook`);
+    const response = await agent.post(`/recipes/${recipeId}/cook`);
 
     expect(response.headers["content-type"]).toMatch(/json/);
     expect(response.status).toEqual(200);
@@ -97,7 +73,7 @@ describe("recipe endpoints", () => {
         unit: "ml",
       },
     ]);
-    const pantry = await request(app).get("/pantry");
+    const pantry = await agent.get("/pantry");
     expect(pantry.body).toEqual({
       data: [
         {
@@ -123,13 +99,13 @@ describe("recipe endpoints", () => {
   });
 
   test("recipe with low stock pantry items do not update any ingredient's quantity", async () => {
-    await request(app).post(`/recipes/${recipeId}/cook`);
-    const secondCook = await request(app).post(`/recipes/${recipeId}/cook`);
-    const thirdCook = await request(app).post(`/recipes/${recipeId}/cook`);
+    await agent.post(`/recipes/${recipeId}/cook`);
+    const secondCook = await agent.post(`/recipes/${recipeId}/cook`);
+    const thirdCook = await agent.post(`/recipes/${recipeId}/cook`);
     expect(secondCook.status).toEqual(200);
     expect(thirdCook.status).toEqual(409);
     expect(thirdCook.text).toContain("Ingredient milk is not in the pantry");
-    const pantry = await request(app).get("/pantry");
+    const pantry = await agent.get("/pantry");
     expect(pantry.body).toEqual({
       data: [
         {
@@ -155,7 +131,7 @@ describe("recipe endpoints", () => {
   });
 
   test("handle unknown ids", async () => {
-    const response = await request(app).post("/recipes/999/cook");
+    const response = await agent.post("/recipes/999/cook");
     expect(response.status).toEqual(404);
     expect(response.text).toContain("Could not find recipe with id 999");
   });

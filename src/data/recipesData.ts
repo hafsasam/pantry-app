@@ -15,7 +15,7 @@ export const findRecipeById = async (id: number): Promise<Recipe> => {
   }
 };
 
-export const cookRecipe = async (id: number) => {
+export const cookRecipe = async (id: number, userId: number) => {
   return prisma.$transaction(async (tx) => {
     // 1. load the recipe WITH its ingredient lines, each line's ingredient,
     //    and that ingredient's pantry item (nested include). Missing recipe → NotFoundError
@@ -23,7 +23,11 @@ export const cookRecipe = async (id: number) => {
       where: { id },
       include: {
         recipeIngredients: {
-          include: { ingredient: { include: { pantryItem: true } } },
+          include: {
+            ingredient: {
+              include: { pantryItems: { where: { user_id: userId } } },
+            },
+          },
         },
       },
     });
@@ -35,7 +39,7 @@ export const cookRecipe = async (id: number) => {
     let updatedPantryItems: PantryItemWithIngredient[] = [];
 
     for (let ri of recipe.recipeIngredients) {
-      const pantry = ri.ingredient.pantryItem;
+      const pantry = ri.ingredient.pantryItems[0] ?? null;
       if (pantry === null || pantry.quantity.isZero()) {
         throw new LowStockError(
           `Ingredient ${ri.ingredient.name} is not in the pantry`,

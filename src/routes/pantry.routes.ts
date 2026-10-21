@@ -13,33 +13,38 @@ export const router = express.Router({ caseSensitive: true, strict: true });
 
 router.get("/", async (req: Request, res: Response) => {
   const { page, needs_restocking } = PantryQuerySchema.parse(req.query);
-  const pantry = await getAllItems(page, needs_restocking);
+  const userId = req.session.userId!;
+  const pantry = await getAllItems(page, userId, needs_restocking);
   res.json(pantry);
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
+  const userId = req.session.userId!;
   const parsedId: number = parseId(id);
-  const item = await getItemById(parsedId);
+  const item = await getItemById(parsedId, userId);
   res.json(item);
 });
 
 router.post("/", async (req: Request, res: Response) => {
-  const item = await createItem(req.body);
+  const userId = req.session.userId!;
+  const item = await createItem(req.body, userId);
   res.status(201).json(item);
 });
 
 router.patch("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
+  const userId = req.session.userId!;
 
   const parsedId: number = parseId(id);
-  const item = await updateItem(parsedId, req.body);
+  const item = await updateItem(parsedId, req.body, userId);
   res.json(item);
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
+  const userId = req.session.userId!;
   const parsedId: number = parseId(id);
-  await deleteItem(parsedId);
+  await deleteItem(parsedId, userId);
   res.sendStatus(204);
 });
