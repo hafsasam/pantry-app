@@ -2,6 +2,7 @@ import type { PantryItem, PartialPantryItem } from "../schema/pantry.schema.js";
 import { NotFoundError } from "../errors/errors.js";
 import { prisma } from "../prisma.js";
 import type { Prisma } from "../generated/prisma/client.js";
+
 export const pageSize: number = 10;
 
 export type PantryItemWithIngredient = Prisma.PantryItemGetPayload<{

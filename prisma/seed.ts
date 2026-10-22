@@ -1,4 +1,5 @@
 import { prisma } from "../src/prisma";
+import * as argon2 from "argon2";
 
 const user = { connect: { email: "hafsa@me.com" } };
 
@@ -12,7 +13,8 @@ await prisma.user.deleteMany();
 await prisma.user.create({
   data: {
     email: "hafsa@me.com",
-    password_hash: "correct horse battery",
+    password_hash: await argon2.hash("correct horse battery"),
+    role: "ADMIN",
   },
 });
 

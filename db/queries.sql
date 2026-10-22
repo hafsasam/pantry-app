@@ -76,3 +76,21 @@ LEFT JOIN pantry_items pi ON ri.ingredient_id = pi.ingredient_id
 JOIN ingredients i ON i.id = ri.ingredient_id
 WHERE pi.quantity IS NULL OR pi.quantity = 0
 ORDER BY i.name ASC;
+
+--11 "Which items in my pantry (user 1) aren't used by any recipe? Name and quantity, alphabetically."
+--1. with LEFT JOIN + IS NULL
+--2. with NOT EXISTS (…)
+SELECT i.name, pi.quantity
+FROM  pantry_items pi
+LEFT JOIN recipe_ingredients ri ON ri.ingredient_id = pi.ingredient_id
+JOIN ingredients i ON i.id = pi.ingredient_id
+WHERE ri.ingredient_id IS NULL AND pi.user_id = 1
+ORDER BY i.name ASC;
+
+SELECT i.name, pi.quantity
+FROM pantry_items pi
+JOIN ingredients i ON i.id = pi.ingredient_id
+WHERE NOT EXISTS (
+  SELECT 1 FROM recipe_ingredients ri WHERE ri.ingredient_id = pi.ingredient_id
+) AND pi.user_id = 1
+ORDER BY i.name ASC;

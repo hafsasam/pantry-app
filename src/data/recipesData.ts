@@ -1,18 +1,48 @@
-import type { Recipe } from "../generated/prisma/client.js";
+import type { CreateRecipe, Recipe } from "../schema/recipe.schema.js";
 import { prisma } from "../prisma.js";
 import { NotFoundError, LowStockError } from "../errors/errors.js";
-import { toPantryItem } from "./pantryData.js";
+import { pageSize, toPantryItem } from "./pantryData.js";
 import type { PantryItemWithIngredient } from "./pantryData.js";
+import {
+  Prisma,
+  type Prisma as PrismaType,
+} from "../generated/prisma/client.js";
 
 export const findRecipeById = async (id: number): Promise<Recipe> => {
   const row = await prisma.recipe.findUnique({
     where: { id },
+    include: {
+      recipeIngredients: { include: { ingredient: true } },
+      recipeSteps: true,
+    },
   });
   if (row === null) {
     throw new NotFoundError(`Could not find the recipe with id ${id}`);
   } else {
-    return row;
+    return toRecipe(row);
   }
+};
+
+export const findAllRecipes = async (
+  page: number,
+): Promise<{ items: Recipe[]; total: number }> => {
+  const start = pageSize * (page - 1);
+  const [recipeRows, total] = await Promise.all([
+    prisma.recipe.findMany({
+      include: {
+        recipeIngredients: { include: { ingredient: true } },
+        recipeSteps: true,
+      },
+      orderBy: { id: "asc" },
+      skip: start,
+      take: pageSize,
+    }),
+    prisma.pantryItem.count({}),
+  ]);
+  return {
+    items: recipeRows.map(toRecipe),
+    total,
+  };
 };
 
 export const cookRecipe = async (id: number, userId: number) => {
@@ -71,4 +101,69 @@ export const cookRecipe = async (id: number, userId: number) => {
     // 4. return the updated pantry items (as PantryItem, via your toPantryItem)
     return updatedPantryItems.map(toPantryItem);
   });
+};
+
+export const removeRecipe = async (id: number): Promise<void> => {
+  try {
+    await prisma.recipe.delete({
+      where: { id },
+    });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2025"
+    ) {
+      throw new NotFoundError("Recipe not found");
+    }
+    throw err;
+  }
+};
+export type RecipeWithStepsAndIngredients = PrismaType.RecipeGetPayload<{
+  include: {
+    recipeIngredients: { include: { ingredient: true } };
+    recipeSteps: true;
+  };
+}>;
+export const toRecipe = (row: RecipeWithStepsAndIngredients): Recipe => ({
+  id: row.id,
+  name: row.name,
+  cook_time_minutes: row.cook_time_minutes,
+  prep_time_minutes: row.prep_time_minutes,
+  recipeIngredients: row.recipeIngredients.map((ri) => ({
+    quantity: ri.quantity.toNumber(),
+    unit: ri.unit,
+    ingredient: { name: ri.ingredient.name },
+  })),
+  recipeSteps: row.recipeSteps,
+});
+
+export const newRecipe = async (recipe: CreateRecipe): Promise<Recipe> => {
+  const row = await prisma.recipe.create({
+    data: {
+      name: recipe.name,
+      cook_time_minutes: recipe.cook_time_minutes,
+      prep_time_minutes: recipe.prep_time_minutes,
+      recipeSteps: {
+        create: recipe.recipeSteps,
+      },
+      recipeIngredients: {
+        create: recipe.recipeIngredients.map((ri) => ({
+          quantity: ri.quantity,
+          unit: ri.unit,
+          ingredient: {
+            connectOrCreate: {
+              create: { name: ri.ingredient.name },
+              where: { name: ri.ingredient.name },
+            },
+          },
+        })),
+      },
+    },
+    include: {
+      recipeIngredients: { include: { ingredient: true } },
+      recipeSteps: true,
+    },
+  });
+
+  return toRecipe(row);
 };

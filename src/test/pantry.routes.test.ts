@@ -1,6 +1,6 @@
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
-import { loginAs, resetData, mockItem } from "./utils.js";
+import { loginAs, resetData, mockItem } from "./helpers.js";
 
 describe("pantry items endpoints", () => {
   beforeEach(async () => {

@@ -12,8 +12,8 @@ export const createUser = async (
 ): Promise<User> => {
   try {
     return await prisma.user.create({
-      data: { email, password_hash: passwordHash },
-      select: { id: true, email: true, created_at: true },
+      data: { email, password_hash: passwordHash, role: "USER" },
+      select: { id: true, email: true, created_at: true, role: true },
     });
   } catch (err) {
     if (
@@ -43,6 +43,7 @@ export const findUserById = async (id: number): Promise<User> => {
       id: true,
       email: true,
       created_at: true,
+      role: true,
     },
   });
 

@@ -12,6 +12,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import session, { type SessionOptions } from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { requireAuth } from "./middleware/requireAuth.js";
+import helmet from "helmet";
 
 const app = express();
 
@@ -22,17 +23,39 @@ if (!sessionSecret) {
   );
 }
 
+const corsVar = process.env.CORS_ORIGINS;
+if (!corsVar) {
+  throw new Error(
+    "CORS_ORIGINS is not set. Add it to your .env file (see .env.example)",
+  );
+}
+const corsOrigins = corsVar.split(",").map((o: string) => o.trim());
+
+const dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+  throw new Error(
+    "DATABASE_URL is not set. Add it to your .env file (see .env.example)",
+  );
+}
+
+const env = process.env.NODE_ENV;
+if (!env) {
+  throw new Error(
+    "NODE_ENV is not set. Add it to your .env file (see .env.example)",
+  );
+}
+
 const PgStore = connectPgSimple(session);
 const sess: SessionOptions = {
   store: new PgStore({
-    conString: process.env.DATABASE_URL,
+    conString: dbUrl,
     createTableIfMissing: false,
   }),
   secret: sessionSecret,
   cookie: {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: env === "production",
     maxAge: 1000 * 60 * 60 * 24 * 14,
   },
   saveUninitialized: false,
@@ -53,9 +76,10 @@ app.use(
   }),
 );
 
-app.use(cors());
+app.use(cors({ origin: corsOrigins, credentials: true }));
 app.use(express.json());
 app.use(session(sess));
+app.use(helmet());
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(document));
 app.use("/pantry", requireAuth, pantryRouter);

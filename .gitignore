@@ -10,3 +10,6 @@ dist/
 .claude
 skills-lock.json
 /src/generated/prisma
+/docs/curl-scripts.md
+bob.txt
+admin.txt

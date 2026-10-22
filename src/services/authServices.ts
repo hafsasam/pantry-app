@@ -25,7 +25,12 @@ export const login = async (body: unknown): Promise<User> => {
     throw new UnauthorizedError("Invalid credentials.");
   }
 
-  return { id: user.id, created_at: user.created_at, email: user.email };
+  return {
+    id: user.id,
+    created_at: user.created_at,
+    email: user.email,
+    role: user.role,
+  };
 };
 
 export const getUserById = async (userId: number): Promise<User> => {

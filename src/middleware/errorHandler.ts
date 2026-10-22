@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   ConflictError,
+  ForbiddenError,
   LowStockError,
   NotFoundError,
   UnauthorizedError,
@@ -33,6 +34,9 @@ export function errorHandler(
   } else if (err instanceof UnauthorizedError) {
     req.log.warn(err.message);
     res.status(401).json({ error: err.message });
+  } else if (err instanceof ForbiddenError) {
+    req.log.warn(err.message);
+    res.status(403).json({ error: err.message });
   } else if (err instanceof NotFoundError) {
     req.log.warn(err.message);
     res.status(404).json({ error: err.message });

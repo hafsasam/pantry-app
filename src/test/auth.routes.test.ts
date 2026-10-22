@@ -1,8 +1,10 @@
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
-import { loginAs, resetData, mockItem } from "./utils.js";
+import { loginAs, resetData, mockItem } from "./helpers.js";
 import request from "supertest";
 import { app } from "../app.js";
+import express from "express";
+import { createLoginLimiter } from "../middleware/loginLimiter.js";
 
 describe("auth endpoints", () => {
   beforeEach(async () => {
@@ -119,6 +121,22 @@ describe("auth endpoints", () => {
     expect(response.status).toEqual(201);
     const response2 = await bob.post("/pantry").send(mockItem);
     expect(response2.status).toEqual(201);
+  });
+
+  test("rate limiter set to 2 doesnt allow the third request to pass", async () => {
+    const testApp = express();
+    testApp.post("/login", createLoginLimiter(2), (req, res) => {
+      res.sendStatus(200);
+    });
+
+    const r1 = await request(testApp).post("/login");
+    const r2 = await request(testApp).post("/login");
+    const r3 = await request(testApp).post("/login");
+
+    expect(r1.status).toBe(200);
+    expect(r2.status).toBe(200);
+    expect(r3.status).toBe(429);
+    expect(r1.headers["ratelimit"]).toBeDefined(); // the draft-8 standard header
   });
 
   afterAll(() => prisma.$disconnect());

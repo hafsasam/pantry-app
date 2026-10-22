@@ -7,6 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model Ingredient {
   id                 Int                @id @default(autoincrement())
   name               String             @unique
@@ -76,6 +81,7 @@ model User {
   password_hash      String
   created_at         DateTime           @default(now())
   pantryItems        PantryItem[]
+  role              Role                @default(USER)
 
   @@map("users")
 }

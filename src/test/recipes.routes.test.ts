@@ -1,6 +1,6 @@
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
-import { loginAs, resetData } from "./utils.js";
+import { loginAs, promoteUser, resetData } from "./helpers.js";
 
 const createRecipe = async () => {
   return await prisma.recipe.create({
@@ -36,9 +36,36 @@ const createRecipe = async () => {
   });
 };
 
+const recipe = {
+  name: "Grilled cheese",
+  prep_time_minutes: 5,
+  cook_time_minutes: 10,
+  recipeIngredients: [
+    {
+      quantity: 100,
+      unit: "g",
+      ingredient: {
+        name: "cheese",
+      },
+    },
+    {
+      quantity: 2,
+      unit: "slice",
+      ingredient: {
+        name: "bread",
+      },
+    },
+  ],
+  recipeSteps: [
+    { position: 1, text: "step 1" },
+    { position: 2, text: "step 2" },
+    { position: 3, text: "step 3" },
+  ],
+};
+
 describe("recipe endpoints", () => {
   let recipeId: number;
-  let agent: Awaited<ReturnType<typeof loginAs>>; // the type of what loginAs returns
+  let agent: Awaited<ReturnType<typeof loginAs>>;
 
   beforeEach(async () => {
     await resetData();
@@ -134,6 +161,71 @@ describe("recipe endpoints", () => {
     const response = await agent.post("/recipes/999/cook");
     expect(response.status).toEqual(404);
     expect(response.text).toContain("Could not find recipe with id 999");
+  });
+
+  test("non admin user can not create a recipe nor delete it", async () => {
+    const bob = await loginAs("bob@me.com");
+    const bobRecipeResponse = await bob.post("/recipes").send(recipe);
+    expect(bobRecipeResponse.status).toEqual(403);
+
+    await promoteUser("hafsa@me.com");
+
+    const adminRecipeResponse = await agent.post("/recipes").send(recipe);
+    expect(adminRecipeResponse.status).toEqual(201);
+
+    const bobDeleteResp = await bob.delete(
+      `/recipes/${adminRecipeResponse.body.id}`,
+    );
+    expect(bobDeleteResp.status).toEqual(403);
+    expect(bobDeleteResp.body).toEqual({
+      error: "You do not have access",
+    });
+    const allRecipes = await agent.get("/recipes");
+    expect(allRecipes.status).toEqual(200);
+    expect(allRecipes.body.totalItems).toEqual(2);
+  });
+
+  test("admin user can create a recipe", async () => {
+    await promoteUser("hafsa@me.com");
+    const adminRecipeResponse = await agent.post("/recipes").send(recipe);
+    expect(adminRecipeResponse.status).toEqual(201);
+    const allRecipes = await agent.get("/recipes");
+    expect(allRecipes.status).toEqual(200);
+    expect(
+      allRecipes.body.data.some(
+        (r: { name: string }) => r.name == "Grilled cheese",
+      ),
+    ).toBe(true);
+  });
+
+  test("admin user cannot cook a deleted recipe", async () => {
+    await promoteUser("hafsa@me.com");
+
+    const adminRecipeResponse = await agent.post("/recipes").send(recipe);
+    expect(adminRecipeResponse.status).toEqual(201);
+
+    const deleteRecipeResp = await agent.delete(
+      `/recipes/${adminRecipeResponse.body.id}`,
+    );
+    expect(deleteRecipeResp.status).toEqual(204);
+
+    const cookRecipeResp = await agent.post(
+      `/recipes/${adminRecipeResponse.body.id}/cook`,
+    );
+    expect(cookRecipeResp.status).toEqual(404);
+    expect(cookRecipeResp.body).toEqual({
+      error: `Could not find recipe with id ${adminRecipeResponse.body.id}`,
+    });
+  });
+
+  test("admin user cannot delete a non existing recipe", async () => {
+    await promoteUser("hafsa@me.com");
+
+    const deleteRecipeResp = await agent.delete(`/recipes/999999`);
+    expect(deleteRecipeResp.status).toEqual(404);
+    expect(deleteRecipeResp.body).toEqual({
+      error: "Recipe not found",
+    });
   });
 
   afterAll(() => prisma.$disconnect());

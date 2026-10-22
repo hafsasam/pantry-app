@@ -19,6 +19,7 @@ export const UserSchema = z.object({
   email,
   id: z.number(),
   created_at: z.date(),
+  role: z.enum(["ADMIN", "USER"]),
 });
 
 export const LoginSchema = SignupSchema.extend({
