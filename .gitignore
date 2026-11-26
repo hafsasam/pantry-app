@@ -9,8 +9,8 @@ dist/
 .agents
 .claude
 skills-lock.json
-/src/generated/prisma
-/docs/curl-scripts.md
+/apps/api/src/generated/prisma
+/apps/api/docs/curl-scripts.md
 bob.txt
 admin.txt
 cookies.txt
