@@ -7,7 +7,7 @@ import {
   getAllRecipes,
 } from "../services/services.js";
 import { requireRole } from "../middleware/requireRole.js";
-import { RecipeQuerySchema } from "../schema/recipe.schema.js";
+import { RecipeQuerySchema } from "@pantry/shared";
 
 export const recipesRouter = express.Router({
   caseSensitive: true,

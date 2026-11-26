@@ -2,7 +2,7 @@ import { prisma } from "../prisma.js";
 import request from "supertest";
 import { app } from "../app.js";
 import { expect } from "vitest";
-import type { PantryItem } from "../schema/pantry.schema.js";
+import type { PantryItem } from "@pantry/shared";
 
 export const resetData = async () => {
   await prisma.$executeRaw`TRUNCATE pantry_items, ingredients, recipes, recipe_ingredients, recipe_steps, users, session RESTART IDENTITY CASCADE`;

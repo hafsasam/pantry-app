@@ -1,0 +1,12 @@
+{
+  "name": "@pantry/shared",
+  "version": "1.0.0",
+  "description": "pantry shared packages",
+  "license": "ISC",
+  "author": "hafsa sam",
+  "type": "module",
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "exports": "./schema/index.ts"
+}

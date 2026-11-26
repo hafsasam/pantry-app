@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import { PantryQuerySchema } from "../schema/pantry.schema.js";
+import { PantryQuerySchema } from "@pantry/shared";
 import {
   createItem,
   deleteItem,

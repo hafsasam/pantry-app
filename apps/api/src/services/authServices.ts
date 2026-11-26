@@ -1,5 +1,5 @@
 import * as argon2 from "argon2";
-import { LoginSchema, SignupSchema, type User } from "../schema/auth.schema.js";
+import { LoginSchema, SignupSchema, type User } from "@pantry/shared";
 import {
   createUser,
   findUserByEmail,

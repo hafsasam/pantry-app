@@ -1,4 +1,4 @@
-import type { CreateRecipe, Recipe } from "../schema/recipe.schema.js";
+import type { CreateRecipe, Recipe } from "@pantry/shared";
 import { prisma } from "../prisma.js";
 import { NotFoundError, LowStockError } from "../errors/errors.js";
 import { pageSize, toPantryItem } from "./pantryData.js";

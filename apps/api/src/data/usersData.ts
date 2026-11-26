@@ -1,6 +1,6 @@
 import { ConflictError, NotFoundError } from "../errors/errors.js";
 import { prisma } from "../prisma.js";
-import type { User } from "../schema/auth.schema.js";
+import type { User } from "@pantry/shared";
 import { Prisma } from "../generated/prisma/client.js";
 import type { Prisma as PrismaType } from "../generated/prisma/client.js";
 

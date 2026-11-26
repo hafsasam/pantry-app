@@ -1,7 +1,4 @@
 import * as z from "zod";
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-
-extendZodWithOpenApi(z);
 
 export const CreateRecipeSchema = z
   .object({
@@ -26,11 +23,11 @@ export const CreateRecipeSchema = z
       )
       .max(1000),
   })
-  .openapi("CreateRecipe");
+  .meta({ id: "CreateRecipe" });
 
 export const RecipeSchema = CreateRecipeSchema.extend({
   id: z.number(),
-}).openapi("Recipe");
+}).meta({ id: "Recipe" });
 
 export const AllRecipesSchema = z
   .object({
@@ -40,13 +37,13 @@ export const AllRecipesSchema = z
     totalItems: z.number(),
     totalPages: z.number(),
   })
-  .openapi("AllRecipes");
+  .meta({ id: "AllRecipes" });
 
 export const RecipeQuerySchema = z
   .object({
-    page: z.coerce.number().int().min(1).default(1).openapi({ example: 2 }),
+    page: z.coerce.number().int().min(1).default(1).meta({ example: 2 }),
   })
-  .openapi("RecipeQuery");
+  .meta({ id: "RecipeQuery" });
 
 export type CreateRecipe = z.infer<typeof CreateRecipeSchema>;
 export type Recipe = z.infer<typeof RecipeSchema>;

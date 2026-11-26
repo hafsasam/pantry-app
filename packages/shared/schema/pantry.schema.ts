@@ -1,22 +1,19 @@
 import * as z from "zod";
-import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-
-extendZodWithOpenApi(z);
 
 const PantryInputSchema = z.object({
-  name: z.string().min(1).openapi({ example: "milk" }),
-  quantity: z.number().nonnegative().openapi({ example: 3.5 }),
-  unit: z.string().min(1).openapi({ example: "kg" }),
-  needs_restocking: z.boolean().openapi({ example: true }),
+  name: z.string().min(1).meta({ example: "milk" }),
+  quantity: z.number().nonnegative().meta({ example: 3.5 }),
+  unit: z.string().min(1).meta({ example: "kg" }),
+  needs_restocking: z.boolean().meta({ example: true }),
 });
 
 export const CreatePantrySchema = PantryInputSchema.extend({
-  needs_restocking: z.boolean().default(false).openapi({ example: true }),
-}).openapi("CreatePantry");
+  needs_restocking: z.boolean().default(false).meta({ example: true }),
+}).meta({ id: "CreatePantry" });
 
 export const PantryItemSchema = CreatePantrySchema.extend({
-  id: z.number().openapi({ example: 13 }),
-}).openapi("PantryItem");
+  id: z.number().meta({ example: 13 }),
+}).meta({ id: "PantryItem" });
 
 export const PartialPantrySchema = PantryInputSchema.omit({ name: true })
   .exactPartial()
@@ -24,21 +21,21 @@ export const PartialPantrySchema = PantryInputSchema.omit({ name: true })
   .refine((val) => Object.keys(val).length > 0, {
     error: "No empty objects allowed! Provide at least one field to update",
   })
-  .openapi("PartialPantry");
+  .meta({ id: "PartialPantry" });
 
 export const PantryQuerySchema = z
   .object({
-    needs_restocking: z.stringbool().optional().openapi({ example: false }),
-    page: z.coerce.number().int().min(1).default(1).openapi({ example: 2 }),
+    needs_restocking: z.stringbool().optional().meta({ example: false }),
+    page: z.coerce.number().int().min(1).default(1).meta({ example: 2 }),
   })
-  .openapi("PantryQuery");
+  .meta({ id: "PantryQuery" });
 
 export const ErrorSchema = z
   .object({
     error: z.string(),
     details: z.array(z.string()).optional(),
   })
-  .openapi("Error");
+  .meta({ id: "Error" });
 
 export const AllPantrySchema = z
   .object({
@@ -48,7 +45,7 @@ export const AllPantrySchema = z
     totalItems: z.number(),
     totalPages: z.number(),
   })
-  .openapi("AllPantry");
+  .meta({ id: "AllPantry" });
 
 export type PantryItem = z.infer<typeof PantryItemSchema>;
 export type PartialPantryItem = z.infer<typeof PartialPantrySchema>;

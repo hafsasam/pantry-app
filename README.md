@@ -7,7 +7,7 @@ ingredients from your pantry in a single transaction.
 ## Tech stack
 
 Express 5 · TypeScript · Zod · PostgreSQL + Prisma 7 · express-session (Postgres store)
-· argon2 · pino · helmet · Vitest + Supertest · OpenAPI / Swagger UI
+· argon2 · pino · helmet · Vitest + Supertest · meta / Swagger UI
 
 ## Getting started
 

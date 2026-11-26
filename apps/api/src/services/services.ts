@@ -17,13 +17,10 @@ import {
   PartialPantrySchema,
   type PantryItem,
   type AllPantryItems,
-} from "../schema/pantry.schema.js";
-import {
   CreateRecipeSchema,
-  RecipeSchema,
   type AllRecipesSchema,
   type Recipe,
-} from "../schema/recipe.schema.js";
+} from "@pantry/shared";
 
 export const getAllItems = async (
   page: number,

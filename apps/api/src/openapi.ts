@@ -9,13 +9,12 @@ import {
   PantryQuerySchema,
   CreatePantrySchema,
   PartialPantrySchema,
-} from "./schema/pantry.schema.js";
-import * as z from "zod";
-import {
   AllRecipesSchema,
   CreateRecipeSchema,
-} from "./schema/recipe.schema.js";
-import { LoginSchema, SignupSchema, UserSchema } from "./schema/auth.schema.js";
+  LoginSchema,
+  SignupSchema,
+} from "@pantry/shared";
+import * as z from "zod";
 
 const registry = new OpenAPIRegistry();
 const cookieAuth = registry.registerComponent("securitySchemes", "cookieAuth", {
@@ -69,7 +68,7 @@ registry.registerPath({
   security: [{ [cookieAuth.name]: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({ example: "12" }),
+      id: z.string().meta({ example: "12" }),
     }),
   },
   responses: {
@@ -167,7 +166,7 @@ registry.registerPath({
   security: [{ [cookieAuth.name]: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({ example: "12" }),
+      id: z.string().meta({ example: "12" }),
     }),
     body: {
       content: {
@@ -221,7 +220,7 @@ registry.registerPath({
   security: [{ [cookieAuth.name]: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({ example: "12" }),
+      id: z.string().meta({ example: "12" }),
     }),
   },
   responses: {
@@ -263,7 +262,7 @@ registry.registerPath({
   security: [{ [cookieAuth.name]: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({ example: "12" }),
+      id: z.string().meta({ example: "12" }),
     }),
   },
   responses: {
@@ -313,7 +312,7 @@ registry.registerPath({
   security: [{ [cookieAuth.name]: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({ example: "12" }),
+      id: z.string().meta({ example: "12" }),
     }),
   },
   responses: {
