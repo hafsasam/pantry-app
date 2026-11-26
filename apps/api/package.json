@@ -1,0 +1,51 @@
+{
+  "name": "@pantry/api",
+  "version": "1.0.0",
+  "description": "pantry organization api",
+  "license": "ISC",
+  "author": "hafsa sam",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=dev tsx watch --env-file=.env ./src/server.ts",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "db:test:reset": "ENV_FILE=.env.test prisma migrate reset --force",
+    "db:migrate": "prisma migrate dev && prisma generate",
+    "db:start": "docker compose up -d",
+    "postinstall": "prisma generate",
+    "psql": "docker compose exec db psql -U example -d pantry"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^9.1.0",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "argon2": "^0.45.1",
+    "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^26.6.5",
+    "@types/supertest": "^7.2.1",
+    "@types/swagger-ui-express": "^4.1.8",
+    "pino-pretty": "^13.2.0",
+    "prisma": "7.10.1",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

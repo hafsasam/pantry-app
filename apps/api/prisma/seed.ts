@@ -1,4 +1,4 @@
-import { prisma } from "../src/prisma";
+import { prisma } from "../src/prisma.js";
 import * as argon2 from "argon2";
 
 const user = { connect: { email: "hafsa@me.com" } };
