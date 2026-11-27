@@ -9,6 +9,7 @@ import {
 import {
   cookRecipe,
   findAllRecipes,
+  findCookable,
   newRecipe,
   removeRecipe,
 } from "../data/recipesData.js";
@@ -20,6 +21,7 @@ import {
   CreateRecipeSchema,
   type AllRecipesSchema,
   type Recipe,
+  type CookableRecipe,
 } from "@pantry/shared";
 
 export const getAllItems = async (
@@ -87,4 +89,10 @@ export const getAllRecipes = async (
 export const createRecipe = async (body: unknown): Promise<Recipe> => {
   const parsedBody = CreateRecipeSchema.parse(body);
   return newRecipe(parsedBody);
+};
+
+export const cookableRecipes = async (
+  userId: number,
+): Promise<CookableRecipe[]> => {
+  return findCookable(userId);
 };

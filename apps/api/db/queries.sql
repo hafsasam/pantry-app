@@ -94,3 +94,67 @@ WHERE NOT EXISTS (
   SELECT 1 FROM recipe_ingredients ri WHERE ri.ingredient_id = pi.ingredient_id
 ) AND pi.user_id = 1
 ORDER BY i.name ASC;
+
+
+-- 12. a query that lists every ingredient of recipe 9, one row each, with these columns:
+--┌────────────┬──────────────────────────┬───────────────────────────────────────┬─────────────────────────────┐
+--│ ingredient │ needed (quantity + unit) │ in_pantry (quantity + unit, or empty) │ have (true/false by rule B)
+
+SELECT i.name, ri.quantity as needed, ri.unit as needed_unit, pi.quantity as in_pantry, pi.unit as in_pantry_unit, (COALESCE(pi.quantity, 0) > 0 AND pi.needs_restocking = false) AS have
+FROM recipe_ingredients ri
+LEFT JOIN pantry_items pi ON ri.ingredient_id = pi.ingredient_id  AND pi.user_id = 6
+JOIN recipes r ON r.id = ri.recipe_id
+JOIN ingredients i ON i.id = ri.ingredient_id
+WHERE r.name = 'Chocolate Peanut Butter Overnight Oats';
+
+
+-- 13. a query that lists every every recipe for user 6, with these columns:
+--┌───────────┬──────┬───────────────────┬────────────┬───────────────────┐
+--│ recipe_id │ name │ total_ingredients │ have_count │ percent_available │
+--├───────────┼──────┼───────────────────┼────────────┼───────────────────┤
+
+SELECT
+  r.id,
+  r.name,
+  COUNT(ri.id) AS total_ingredients,
+  COUNT(ri.id) FILTER (WHERE pi.quantity > 0 AND NOT pi.needs_restocking) AS have_count,
+  ROUND(
+    100.0 * COUNT(ri.id) FILTER (WHERE pi.quantity > 0 AND NOT pi.needs_restocking)
+    / NULLIF(COUNT(ri.id), 0)
+  ) AS percent_available
+FROM recipes r
+LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
+LEFT JOIN pantry_items pi ON pi.ingredient_id = ri.ingredient_id AND pi.user_id = 6
+GROUP BY r.id, r.name
+ORDER BY percent_available DESC NULLS LAST, r.id;
+
+
+-- 14 list of missing ingredients
+WITH recipe_rows AS (
+  SELECT
+    r.id   AS recipe_id,
+    r.name AS recipe_name,
+    ri.id  AS recipe_ingredient_id,
+    i.name AS ingredient_name,
+    COALESCE(pi.quantity > 0 AND NOT pi.needs_restocking, false) AS have
+  FROM recipes r
+  LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
+  LEFT JOIN ingredients i         ON i.id = ri.ingredient_id
+  LEFT JOIN pantry_items pi       ON pi.ingredient_id = ri.ingredient_id
+                                 AND pi.user_id = 6
+)
+SELECT
+  recipe_id,
+  recipe_name,
+  COUNT(recipe_ingredient_id)                     AS total_ingredients,
+  COUNT(recipe_ingredient_id) FILTER (WHERE have) AS have_count,
+  ROUND(100.0 * COUNT(recipe_ingredient_id) FILTER (WHERE have)
+        / NULLIF(COUNT(recipe_ingredient_id), 0)) AS percent_available,
+  COALESCE(
+    array_agg(ingredient_name ORDER BY ingredient_name)
+      FILTER (WHERE recipe_ingredient_id IS NOT NULL AND NOT have),
+    '{}'
+  ) AS missing
+FROM recipe_rows
+GROUP BY recipe_id, recipe_name
+ORDER BY percent_available DESC NULLS LAST, recipe_id;

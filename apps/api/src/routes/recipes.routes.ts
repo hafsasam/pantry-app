@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from "express";
 import { parseId } from "./utils.js";
 import {
+  cookableRecipes,
   cookRecipeId,
   createRecipe,
   deleteRecipe,
@@ -47,3 +48,9 @@ recipesRouter.post(
     res.status(201).json(recipe);
   },
 );
+
+recipesRouter.get("/cookable", async (req: Request, res: Response) => {
+  const userId = req.session.userId!;
+  const recipes = await cookableRecipes(userId);
+  res.status(200).json({ data: recipes });
+});

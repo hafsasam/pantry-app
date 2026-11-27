@@ -1,4 +1,4 @@
-import type { CreateRecipe, Recipe } from "@pantry/shared";
+import type { CookableRecipe, CreateRecipe, Recipe } from "@pantry/shared";
 import { prisma } from "../prisma.js";
 import { NotFoundError, LowStockError } from "../errors/errors.js";
 import { pageSize, toPantryItem } from "./pantryData.js";
@@ -166,4 +166,37 @@ export const newRecipe = async (recipe: CreateRecipe): Promise<Recipe> => {
   });
 
   return toRecipe(row);
+};
+
+export const findCookable = async (
+  userId: number,
+): Promise<CookableRecipe[]> => {
+  return await prisma.$queryRaw<CookableRecipe[]>`WITH recipe_rows AS (
+    SELECT
+      r.id   AS recipe_id,
+      r.name AS recipe_name,
+      ri.id  AS recipe_ingredient_id,
+      i.name AS ingredient_name,
+      COALESCE(pi.quantity > 0 AND NOT pi.needs_restocking, false) AS have
+    FROM recipes r
+    LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
+    LEFT JOIN ingredients i         ON i.id = ri.ingredient_id
+    LEFT JOIN pantry_items pi       ON pi.ingredient_id = ri.ingredient_id
+                                   AND pi.user_id = ${userId}
+  )
+  SELECT
+    recipe_id,
+    recipe_name,
+    COUNT(recipe_ingredient_id)::int                     AS total_ingredients,
+    (COUNT(recipe_ingredient_id) FILTER (WHERE have))::int AS have_count,
+    (ROUND(100.0 * COUNT(recipe_ingredient_id) FILTER (WHERE have)
+          / NULLIF(COUNT(recipe_ingredient_id), 0)))::int AS percent_available,
+    COALESCE(
+      array_agg(ingredient_name ORDER BY ingredient_name)
+        FILTER (WHERE recipe_ingredient_id IS NOT NULL AND NOT have),
+      '{}'
+    ) AS missing
+  FROM recipe_rows
+  GROUP BY recipe_id, recipe_name
+  ORDER BY percent_available DESC NULLS LAST, recipe_id;`;
 };

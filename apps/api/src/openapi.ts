@@ -13,6 +13,7 @@ import {
   CreateRecipeSchema,
   LoginSchema,
   SignupSchema,
+  CookableRecipesSchema,
 } from "@pantry/shared";
 import * as z from "zod";
 
@@ -423,6 +424,33 @@ registry.registerPath({
     },
     403: {
       description: "Not an admin",
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/recipes/cookable",
+  description: "Get cookable recipes",
+  summary: "Get cookable recipes",
+  security: [{ [cookieAuth.name]: [] }],
+
+  responses: {
+    200: {
+      description: "Object with an array of cookable recipes",
+      content: {
+        "application/json": {
+          schema: CookableRecipesSchema,
+        },
+      },
+    },
+    401: {
+      description: "Not logged in",
       content: {
         "application/json": {
           schema: ErrorSchema,

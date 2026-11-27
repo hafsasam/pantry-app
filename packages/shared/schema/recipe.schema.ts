@@ -45,6 +45,25 @@ export const RecipeQuerySchema = z
   })
   .meta({ id: "RecipeQuery" });
 
+export const CookableRecipeSchema = z
+  .object({
+    recipe_id: z.number(),
+    recipe_name: z.string(),
+    total_ingredients: z.number(),
+    have_count: z.number(),
+    percent_available: z.number().nullable(),
+    missing: z.array(z.string()),
+  })
+  .meta({ id: "CookableRecipe" });
+
+export const CookableRecipesSchema = z
+  .object({
+    data: z.array(CookableRecipeSchema),
+  })
+  .meta({ id: "CookableRecipes" });
+
 export type CreateRecipe = z.infer<typeof CreateRecipeSchema>;
 export type Recipe = z.infer<typeof RecipeSchema>;
 export type AllRecipesSchema = z.infer<typeof AllRecipesSchema>;
+export type CookableRecipe = z.infer<typeof CookableRecipeSchema>;
+export type CookableRecipes = z.infer<typeof CookableRecipesSchema>;

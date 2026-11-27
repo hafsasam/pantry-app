@@ -1,6 +1,9 @@
 import { describe, beforeEach, test, expect, afterAll } from "vitest";
 import { prisma } from "../prisma.js";
 import { loginAs, promoteUser, resetData } from "./helpers.js";
+import request from "supertest";
+import { app } from "../app.js";
+import { CookableRecipesSchema } from "@pantry/shared";
 
 const createRecipe = async () => {
   return await prisma.recipe.create({
@@ -27,6 +30,40 @@ const createRecipe = async () => {
               connectOrCreate: {
                 where: { name: "milk" },
                 create: { name: "milk" },
+              },
+            },
+          },
+        ],
+      },
+    },
+  });
+};
+
+const createRecipe2 = async () => {
+  return await prisma.recipe.create({
+    data: {
+      name: "Test chicken",
+      prep_time_minutes: 25,
+      cook_time_minutes: 40,
+      recipeIngredients: {
+        create: [
+          {
+            quantity: 150,
+            unit: "g",
+            ingredient: {
+              connectOrCreate: {
+                where: { name: "chicken breast" },
+                create: { name: "chicken breast" },
+              },
+            },
+          },
+          {
+            quantity: 500,
+            unit: "g",
+            ingredient: {
+              connectOrCreate: {
+                where: { name: "potatoes" },
+                create: { name: "potatoes" },
               },
             },
           },
@@ -225,6 +262,181 @@ describe("recipe endpoints", () => {
     expect(deleteRecipeResp.status).toEqual(404);
     expect(deleteRecipeResp.body).toEqual({
       error: "Recipe not found",
+    });
+  });
+
+  afterAll(() => prisma.$disconnect());
+});
+
+describe("GET /recipes/cookable", () => {
+  let agent: Awaited<ReturnType<typeof loginAs>>;
+
+  beforeEach(async () => {
+    await resetData();
+    await createRecipe();
+  });
+
+  test("unlogged user cannot get cookable recipes", async () => {
+    const cookableRecipes = await request.agent(app).get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(401);
+    expect(cookableRecipes.body).toEqual({
+      error: "Login required",
+    });
+  });
+
+  test("cookable recipes with empty pantry", async () => {
+    agent = await loginAs("hafsa@me.com");
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(0);
+    expect(cookableRecipes.body.data[0].missing).toEqual([
+      "milk",
+      "rolled oats",
+    ]);
+  });
+
+  test("cookable recipes with oats only in pantry", async () => {
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(50);
+    expect(cookableRecipes.body.data[0].missing).toEqual(["milk"]);
+  });
+
+  test("cookable recipes with no milk in pantry", async () => {
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent.post("/pantry").send({ name: "milk", quantity: 0, unit: "ml" });
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(50);
+    expect(cookableRecipes.body.data[0].missing).toEqual(["milk"]);
+  });
+
+  test("cookable recipes with full pantry", async () => {
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent
+      .post("/pantry")
+      .send({ name: "milk", quantity: 500, unit: "ml" });
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(100);
+    expect(cookableRecipes.body.data[0].missing).toEqual([]);
+  });
+
+  test("cookable recipes with full pantry but milk needs restocking", async () => {
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent.post("/pantry").send({
+      name: "milk",
+      quantity: 500,
+      unit: "ml",
+      needs_restocking: true,
+    });
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(50);
+    expect(cookableRecipes.body.data[0].missing).toEqual(["milk"]);
+  });
+
+  test("user B has milk, user A doesn't, and user A still sees milk as missing", async () => {
+    agent = await loginAs("hafsa@me.com");
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent.post("/pantry").send({
+      name: "milk",
+      quantity: 500,
+      unit: "ml",
+    });
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(1);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(100);
+    expect(cookableRecipes.body.data[0].missing).toEqual([]);
+
+    await agent.post("/auth/logout");
+    agent = await loginAs("bob@me.com");
+    const cookableBobRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableBobRecipes.status).toEqual(200);
+    expect(cookableBobRecipes.body.data).toHaveLength(1);
+    expect(cookableBobRecipes.body.data[0].percent_available).toEqual(0);
+    expect(cookableBobRecipes.body.data[0].missing).toEqual([
+      "milk",
+      "rolled oats",
+    ]);
+  });
+
+  test("two recipes are ordered DESC, the empty one comes last", async () => {
+    agent = await loginAs("hafsa@me.com");
+
+    await agent
+      .post("/pantry")
+      .send({ name: "rolled oats", quantity: 600, unit: "g" });
+    await agent.post("/pantry").send({
+      name: "milk",
+      quantity: 500,
+      unit: "ml",
+    });
+
+    await createRecipe2();
+    await prisma.recipe.create({ data: { name: "Empty" } });
+
+    const cookableRecipes = await agent.get(`/recipes/cookable`);
+    expect(cookableRecipes.status).toEqual(200);
+    expect(cookableRecipes.body.data).toHaveLength(3);
+    expect(cookableRecipes.body.data[0].percent_available).toEqual(100);
+    expect(cookableRecipes.body.data[0].missing).toEqual([]);
+    expect(cookableRecipes.body.data[1].percent_available).toEqual(0);
+    expect(cookableRecipes.body.data[1].missing).toEqual([
+      "chicken breast",
+      "potatoes",
+    ]);
+    expect(cookableRecipes.body.data[2].percent_available).toEqual(null);
+    expect(cookableRecipes.body.data[2].missing).toEqual([]);
+
+    expect(CookableRecipesSchema.parse(cookableRecipes.body)).toEqual({
+      data: [
+        {
+          have_count: 2,
+          missing: [],
+          percent_available: 100,
+          recipe_id: 1,
+          recipe_name: "Test oats",
+          total_ingredients: 2,
+        },
+        {
+          have_count: 0,
+          missing: ["chicken breast", "potatoes"],
+          percent_available: 0,
+          recipe_id: 2,
+          recipe_name: "Test chicken",
+          total_ingredients: 2,
+        },
+        {
+          have_count: 0,
+          missing: [],
+          percent_available: null,
+          recipe_id: 3,
+          recipe_name: "Empty",
+          total_ingredients: 0,
+        },
+      ],
     });
   });
 
